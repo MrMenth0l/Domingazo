@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">Proyecto1_PlataformasMoviles_Domingazo</string>
+    <string name="app_name">Domingazo</string>
+    <string name="itinerary_title">Itinerario del viaje</string>
+    <string name="timezone_label">Zona horaria</string>
+    <string name="map_title">Mapa del recorrido</string>
+    <string name="ai_title">Reorganizar con IA</string>
+    <string name="ai_subtitle">Genera 3 propuestas optimizadas y elige la mejor</string>
+    <string name="select_button">Seleccionar</string>
 </resources>

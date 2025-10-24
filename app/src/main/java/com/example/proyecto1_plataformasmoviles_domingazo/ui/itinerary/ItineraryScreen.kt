@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -24,9 +25,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
@@ -47,50 +51,63 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoSecondary
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.SurfaceGray
 import kotlin.math.roundToInt
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.background
 
+
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ItineraryScreen(
-    itinerary: Itinerary,
-    proposals: List<CandidateItinerary>,
-    connectedMembers: List<ConnectedMember>,
-    modifier: Modifier = Modifier,
+    itineraryId: String,
+    itinerary: Itinerary = mockItinerary,
+    proposals: List<CandidateItinerary> = mockProposals,
+    connectedMembers: List<ConnectedMember> = mockConnectedMembers,
+    onBackClick: () -> Unit,
 ) {
-    val summary = itinerary.summary
-
-    LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        item {
-            HeaderSection(summary = summary)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Itinerario Detalle") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
         }
-
-        if (connectedMembers.isNotEmpty()) {
-            item {
-                CollaborationBar(connectedMembers = connectedMembers)
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            item { HeaderSection(summary = itinerary.summary) }
+            if (connectedMembers.isNotEmpty()) {
+                item { CollaborationBar(connectedMembers = connectedMembers) }
             }
-        }
-
-        item {
-            TimelineSection(activities = itinerary.activities)
-        }
-
-        item {
-            MiniMapSection()
-        }
-
-        item {
-            HorizontalDivider()
-        }
-
-        item {
-            ProposalsSection(proposals = proposals)
+            item { TimelineSection(activities = itinerary.activities) }
+            item { MiniMapSection() }
+            item { ProposalsSection(proposals = proposals) }
         }
     }
 }
+
+
+
+
 
 @Composable
 private fun HeaderSection(summary: ItinerarySummary) {

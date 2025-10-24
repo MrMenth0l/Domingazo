@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Domingazo</string>
+    <string name="itinerary_title">Travel Itinerary</string>
+    <string name="timezone_label">Time zone</string>
+    <string name="map_title">Route map</string>
+    <string name="ai_title">Reorganize with AI</string>
+    <string name="ai_subtitle">Generate 3 optimized proposals and choose the best one</string>
+    <string name="select_button">Select</string>
+</resources>
