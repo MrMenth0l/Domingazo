@@ -1,8 +1,7 @@
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.login
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,15 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
-    registeredUsers: List<Triple<String, String, String>>, // Lista de usuarios registrados
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+    snackbarHostState: SnackbarHostState
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -38,12 +38,10 @@ fun LoginScreen(
     var passwordError by remember { mutableStateOf(false) }
     var loginButtonPressed by remember { mutableStateOf(false) }
     val loginButtonScale by animateFloatAsState(if (loginButtonPressed) 0.95f else 1f)
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
+    val auth = FirebaseAuth.getInstance()
 
-    // Validación para el correo
-    fun isValidEmail(email: String): Boolean {
-        return email.contains("@") && email.contains(".")
-    }
+    fun isValidEmail(e: String) = e.contains("@") && e.contains(".")
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -53,16 +51,11 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 20.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF5F7FA), Color.White)
-                    )
-                ),
+                .padding(16.dp)
+                .background(Brush.verticalGradient(listOf(Color(0xFFF5F7FA), Color.White))),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título
             Text(
                 text = "Bienvenido",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -73,103 +66,45 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Tarjeta de formulario
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                colors = CardDefaults.cardColors(Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Campo de correo
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = email,
-                        onValueChange = {
-                            email = it
-                            emailError = !isValidEmail(it)
-                        },
+                        onValueChange = { email = it; emailError = !isValidEmail(it) },
                         label = { Text("Correo") },
                         placeholder = { Text("Ej. ejemplo@correo.com") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Email,
-                                contentDescription = "Ícono de correo",
-                                tint = IndigoPrimary
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp)),
+                        leadingIcon = { Icon(Icons.Default.Email, "", tint = IndigoPrimary) },
                         isError = emailError,
                         supportingText = {
-                            if (emailError) {
-                                Text(
-                                    text = "Ingresa un correo válido",
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                            if (emailError) Text("Correo inválido", color = MaterialTheme.colorScheme.error)
                         },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = IndigoPrimary,
-                            unfocusedBorderColor = Color(0xFF757575),
-                            focusedLabelColor = IndigoPrimary,
-                            cursorColor = AquaAccent
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
                     )
 
-                    // Campo de contraseña
                     OutlinedTextField(
                         value = password,
-                        onValueChange = {
-                            password = it
-                            passwordError = it.isBlank()
-                        },
+                        onValueChange = { password = it; passwordError = it.isBlank() },
                         label = { Text("Contraseña") },
                         placeholder = { Text("Ingresa tu contraseña") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = "Ícono de contraseña",
-                                tint = IndigoPrimary
-                            )
-                        },
+                        leadingIcon = { Icon(Icons.Default.Lock, "", tint = IndigoPrimary) },
                         visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp)),
                         isError = passwordError,
                         supportingText = {
-                            if (passwordError) {
-                                Text(
-                                    text = "La contraseña no puede estar vacía",
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                            if (passwordError) Text("Requerida", color = MaterialTheme.colorScheme.error)
                         },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = IndigoPrimary,
-                            unfocusedBorderColor = Color(0xFF757575),
-                            focusedLabelColor = IndigoPrimary,
-                            cursorColor = AquaAccent
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
                     )
                 }
             }
 
-            // Botones
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
@@ -178,45 +113,28 @@ fun LoginScreen(
                         emailError = !isValidEmail(email)
                         passwordError = password.isBlank()
                         if (!emailError && !passwordError) {
-                            // Verificar si el usuario existe en la lista de registrados
-                            val userExists = registeredUsers.any { it.second == email && it.third == password }
-                            if (userExists || (email == "diego.quan@uvg.edu.gt" && password == "123456")) {
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Inicio de sesión exitoso")
+                            scope.launch {
+                                try {
+                                    auth.signInWithEmailAndPassword(email, password).await()
+                                    snackbarHostState.showSnackbar("¡Bienvenido!")
                                     onLoginSuccess()
-                                }
-                            } else {
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Credenciales incorrectas")
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Error: ${e.message}")
                                 }
                             }
                         }
                         loginButtonPressed = false
                     },
-                    modifier = Modifier
-                        .weight(1f)
-                        .scale(loginButtonScale)
-                        .clip(RoundedCornerShape(12.dp)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = AquaAccent,
-                        contentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 6.dp,
-                        pressedElevation = 2.dp
-                    )
+                    modifier = Modifier.weight(1f).scale(loginButtonScale),
+                    colors = ButtonDefaults.buttonColors(AquaAccent)
                 ) {
                     Text("Iniciar sesión", fontSize = 16.sp)
                 }
 
                 OutlinedButton(
                     onClick = onRegisterClick,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp)),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = IndigoPrimary
-                    ),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
                     border = BorderStroke(1.dp, IndigoPrimary)
                 ) {
                     Text("Registrarse", fontSize = 16.sp)
