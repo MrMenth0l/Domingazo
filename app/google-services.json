@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1089159917857",
+    "project_id": "itinerarios-app-6e2f1",
+    "storage_bucket": "itinerarios-app-6e2f1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089159917857:android:9d91135dccd34e3586ce60",
+        "android_client_info": {
+          "package_name": "com.example.proyecto1_plataformasmoviles_domingazo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2pCEupGZCzZJsoyXNOfYgMPplJh1jdlw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,105 +1,53 @@
-package com.example.proyecto1_plataformasmoviles_domingazo.navigation
+package com.example.proyecto1_plataformasmoviles_domingazo.ui.navigation
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.NavType
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.auth.AuthScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.home.HomeScreen
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.ItineraryFormScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.ItineraryScreen
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.login.LoginScreen
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.newitinerary.NewItineraryScreen
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.register.RegisterScreen
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.settings.SettingsScreen
-import androidx.compose.material3.SnackbarHostState
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
-    // Lista simulada para almacenar usuarios registrados
-    val registeredUsers = remember { mutableStateListOf<Triple<String, String, String>>() }
+fun NavGraph(startDestination: String, userId: String?) {
+    val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            val snackbarHostState = remember { SnackbarHostState() }
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
-                onRegisterClick = {
-                    navController.navigate("register")
-                },
-                registeredUsers = registeredUsers
-            )
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable("auth") {
+            AuthScreen { navController.navigate("home") { popUpTo("auth") { inclusive = true } } }
         }
-
-        composable("register") {
-            val snackbarHostState = remember { SnackbarHostState() }
-            RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate("login") {
-                        popUpTo("register") { inclusive = true }
-                    }
-                },
-                onBackToLogin = {
-                    navController.popBackStack()
-                },
-                onUserRegistered = { name, email, password ->
-                    // Guardar usuario en la lista simulada
-                    registeredUsers.add(Triple(name, email, password))
-                },
-                snackbarHostState = snackbarHostState
-            )
-        }
-
         composable("home") {
             HomeScreen(
-                onItineraryClick = { itineraryId ->
-                    val encodedId = URLEncoder.encode(itineraryId, StandardCharsets.UTF_8.toString())
-                    navController.navigate("itinerary/$encodedId")
-                },
-                onSettingsClick = { navController.navigate("settings") },
-                onNewItineraryClick = { navController.navigate("newItinerary") }
+                userId = userId ?: "",
+                onItineraryClick = { navController.navigate("detail/$it") },
+                onSettingsClick = { navController.navigate("profile") },
+                onNewItineraryClick = { navController.navigate("create") }
             )
         }
-
+        composable("create") {
+            ItineraryFormScreen(
+                userId = userId ?: "",
+                onSaveSuccess = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
+                onCancel = { navController.popBackStack() }
+            )
+        }
         composable(
-            route = "itinerary/{itineraryId}",
+            "detail/{itineraryId}",
             arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: ""
-            ItineraryScreen(
-                itineraryId = itineraryId,
-                onBackClick = { navController.popBackStack() }
-            )
+            val id = backStackEntry.arguments?.getString("itineraryId") ?: ""
+            ItineraryScreen(id, userId ?: "", { navController.popBackStack() })
         }
-
-        composable("newItinerary") {
-            NewItineraryScreen(
-                onBackClick = { navController.popBackStack() },
-                onSaveClick = { destino, fecha ->
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable("settings") {
-            val snackbarHostState = remember { SnackbarHostState() }
-            SettingsScreen(
-                onBack = { navController.popBackStack() },
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    }
-                },
-                snackbarHostState = snackbarHostState
-            )
+        composable("profile") {
+            Text("Perfil (próximamente)", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
         }
     }
 }

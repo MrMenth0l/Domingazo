@@ -3,25 +3,21 @@ package com.example.proyecto1_plataformasmoviles_domingazo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
-import com.example.proyecto1_plataformasmoviles_domingazo.navigation.AppNavHost
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.ProyectoTheme
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.navigation.NavGraph
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.Proyecto1PlataformasmovilesDomingazoTheme
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
 
         setContent {
-            ProyectoTheme {
-                Surface(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-                    val navController = rememberNavController()
-                    AppNavHost(navController)
-                }
+            Proyecto1PlataformasmovilesDomingazoTheme {
+                val auth = FirebaseAuth.getInstance()
+                val userId = auth.currentUser?.uid
+                NavGraph(startDestination = if (userId == null) "auth" else "home", userId = userId)
             }
         }
     }
