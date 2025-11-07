@@ -1,5 +1,6 @@
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.settings
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -28,8 +29,14 @@ import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, snackbarHostState: SnackbarHostState) {
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onLogout: () -> Unit,
+    snackbarHostState: SnackbarHostState
+) {
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser ?: run { onBack(); return }
+    val userId = user.uid
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 
@@ -45,25 +52,37 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, snackbarHostState: 
     val editButtonScale by animateFloatAsState(if (editButtonPressed) 0.95f else 1f)
     val logoutButtonScale by animateFloatAsState(if (logoutButtonPressed) 0.95f else 1f)
 
-    fun isValidEmail(email: String) = email.contains("@") && email.contains(".")
+    fun isValidEmail(e: String) = e.contains("@") && e.contains(".")
 
-    // Cargar datos del usuario
     LaunchedEffect(userId) {
         try {
             val doc = db.collection("usuarios").document(userId).get().await()
             if (doc.exists()) {
-                name = doc.getString("nombre") ?: "Usuario"
-                email = doc.getString("email") ?: ""
+                name = doc.getString("nombre") ?: user.displayName ?: "Usuario"
+                email = doc.getString("email") ?: user.email ?: ""
                 bio = doc.getString("bio") ?: ""
+            } else {
+                db.collection("usuarios").document(userId).set(
+                    hashMapOf("nombre" to (user.displayName ?: "Usuario"), "email" to (user.email ?: ""), "bio" to "")
+                ).await()
+                name = user.displayName ?: "Usuario"
+                email = user.email ?: ""
+                bio = ""
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Log.e("Settings", "Error: ${e.message}", e)
+            name = user.displayName ?: "Usuario"
+            email = user.email ?: ""
+            bio = ""
+            scope.launch { snackbarHostState.showSnackbar("Error de red") }
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Perfil de Usuario", fontWeight = FontWeight.Bold, color = IndigoPrimary) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver", tint = IndigoPrimary) } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "", tint = IndigoPrimary) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -71,11 +90,7 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, snackbarHostState: 
         containerColor = Color(0xFFF5F7FA)
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(shape = CircleShape, color = AquaAccent.copy(0.2f), shadowElevation = 8.dp, modifier = Modifier.size(120.dp)) {
@@ -110,9 +125,13 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, snackbarHostState: 
                             nameError = name.isBlank(); emailError = !isValidEmail(email)
                             if (!nameError && !emailError) {
                                 scope.launch {
-                                    db.collection("usuarios").document(userId).update(mapOf("nombre" to name, "email" to email, "bio" to bio)).await()
-                                    snackbarHostState.showSnackbar("Guardado")
-                                    isEditing = false
+                                    try {
+                                        db.collection("usuarios").document(userId).update(mapOf("nombre" to name, "email" to email, "bio" to bio)).await()
+                                        snackbarHostState.showSnackbar("Guardado")
+                                        isEditing = false
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Error al guardar")
+                                    }
                                 }
                             }
                         } else isEditing = true
@@ -135,9 +154,7 @@ fun SettingsScreen(onBack: () -> Unit, onLogout: () -> Unit, snackbarHostState: 
                     onDismissRequest = { showLogoutDialog = false },
                     title = { Text("Cerrar sesión") },
                     text = { Text("¿Estás seguro?") },
-                    confirmButton = {
-                        TextButton(onClick = { showLogoutDialog = false; onLogout() }) { Text("Sí", color = Color.Red) }
-                    },
+                    confirmButton = { TextButton(onClick = { showLogoutDialog = false; onLogout() }) { Text("Sí", color = Color.Red) } },
                     dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("No") } }
                 )
             }

@@ -24,6 +24,7 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -54,25 +55,34 @@ fun RegisterScreen(
         containerColor = Color(0xFFF5F7FA)
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).background(Brush.verticalGradient(listOf(Color(0xFFF5F7FA), Color.White))),
-            verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
+                .background(Brush.verticalGradient(listOf(Color(0xFFF5F7FA), Color.White))),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Crear Cuenta", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 28.sp, color = IndigoPrimary), modifier = Modifier.padding(bottom = 32.dp))
 
             Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(name, { name = it; nameError = it.isBlank() }, label = { Text("Nombre") }, leadingIcon = { Icon(Icons.Default.Person, "", tint = IndigoPrimary) },
+                    OutlinedTextField(
+                        value = name, onValueChange = { name = it; nameError = it.isBlank() },
+                        label = { Text("Nombre") }, leadingIcon = { Icon(Icons.Default.Person, "", tint = IndigoPrimary) },
                         isError = nameError, supportingText = { if (nameError) Text("Requerido", color = MaterialTheme.colorScheme.error) },
-                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary))
-
-                    OutlinedTextField(email, { email = it; emailError = !isValidEmail(it) }, label = { Text("Correo") }, leadingIcon = { Icon(Icons.Default.Email, "", tint = IndigoPrimary) },
+                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                    )
+                    OutlinedTextField(
+                        value = email, onValueChange = { email = it; emailError = !isValidEmail(it) },
+                        label = { Text("Correo") }, leadingIcon = { Icon(Icons.Default.Email, "", tint = IndigoPrimary) },
                         isError = emailError, supportingText = { if (emailError) Text("Correo inválido", color = MaterialTheme.colorScheme.error) },
-                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary))
-
-                    OutlinedTextField(password, { password = it; passwordError = !isValidPassword(it) }, label = { Text("Contraseña") }, leadingIcon = { Icon(Icons.Default.Lock, "", tint = IndigoPrimary) },
+                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                    )
+                    OutlinedTextField(
+                        value = password, onValueChange = { password = it; passwordError = !isValidPassword(it) },
+                        label = { Text("Contraseña") }, leadingIcon = { Icon(Icons.Default.Lock, "", tint = IndigoPrimary) },
                         visualTransformation = PasswordVisualTransformation(), isError = passwordError,
                         supportingText = { if (passwordError) Text("Mínimo 6 caracteres", color = MaterialTheme.colorScheme.error) },
-                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary))
+                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                    )
                 }
             }
 
@@ -80,16 +90,19 @@ fun RegisterScreen(
                 Button(
                     onClick = {
                         registerButtonPressed = true
-                        nameError = name.isBlank()
-                        emailError = !isValidEmail(email)
-                        passwordError = !isValidPassword(password)
+                        nameError = name.isBlank(); emailError = !isValidEmail(email); passwordError = !isValidPassword(password)
                         if (!nameError && !emailError && !passwordError) {
                             scope.launch {
                                 try {
                                     val result = auth.createUserWithEmailAndPassword(email, password).await()
                                     val userId = result.user?.uid ?: return@launch
                                     db.collection("usuarios").document(userId).set(
-                                        hashMapOf("nombre" to name, "email" to email, "bio" to "")
+                                        hashMapOf(
+                                            "nombre" to name,
+                                            "email" to email,
+                                            "bio" to "",
+                                            "createdAt" to Timestamp.now()
+                                        )
                                     ).await()
                                     snackbarHostState.showSnackbar("¡Cuenta creada!")
                                     onRegisterSuccess()
@@ -97,8 +110,6 @@ fun RegisterScreen(
                                     snackbarHostState.showSnackbar("Error: ${e.message}")
                                 }
                             }
-                        } else {
-                            scope.launch { snackbarHostState.showSnackbar("Corrige los errores") }
                         }
                         registerButtonPressed = false
                     },
@@ -106,9 +117,11 @@ fun RegisterScreen(
                     colors = ButtonDefaults.buttonColors(AquaAccent)
                 ) { Text("Registrarse") }
 
-                OutlinedButton(onClick = onBackToLogin, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary), border = BorderStroke(1.dp, IndigoPrimary)) {
-                    Text("Volver")
-                }
+                OutlinedButton(
+                    onClick = onBackToLogin, modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
+                    border = BorderStroke(1.dp, IndigoPrimary)
+                ) { Text("Volver") }
             }
         }
     }
