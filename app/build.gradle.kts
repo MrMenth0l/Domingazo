@@ -20,6 +20,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // GOOGLE MAPS API KEY DESDE local.properties
+        val mapsKey: String = project.findProperty("GOOGLE_MAPS_API_KEY")?.toString() ?: ""
+        manifestPlaceholders["MAPS_API_KEY"] = mapsKey
     }
 
     buildTypes {
@@ -46,7 +50,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = "1.6.11"
     }
 }
 
@@ -66,15 +70,23 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.storage.ktx)
 
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+
+    // Google Maps
+    implementation(libs.maps.compose)
+
+    // ICONOS (MATERIAL 1 - Compatible con Material 3)
+    implementation(libs.material.icons.extended)
+
+    // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-
-    //Navigation Compose
-    implementation(libs.androidx.navigation.compose)
 }

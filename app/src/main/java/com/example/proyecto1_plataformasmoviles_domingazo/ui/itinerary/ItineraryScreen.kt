@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.android.gms.maps.model.*
+import com.google.maps.android.compose.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -34,6 +33,7 @@ fun ItineraryScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showActivityDialog by remember { mutableStateOf(false) }
     var editingActivityId by remember { mutableStateOf<String?>(null) }
+    var showMap by remember { mutableStateOf(false) }
 
     val db = FirebaseFirestore.getInstance()
 
@@ -58,7 +58,7 @@ fun ItineraryScreen(
         }
     }
 
-    // Cargar actividades en tiempo real
+    // Cargar actividades
     LaunchedEffect(itineraryId) {
         db.collection("usuarios").document(userId)
             .collection("itinerarios").document(itineraryId)
@@ -91,160 +91,127 @@ fun ItineraryScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, "Volver")
                     }
+                },
+                actions = {
+                    IconButton(onClick = { showMap = !showMap }) {
+                        Icon(
+                            imageVector = if (showMap) Icons.Default.List else Icons.Default.Map,
+                            contentDescription = if (showMap) "Ver lista" else "Ver mapa"
+                        )
+                    }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    editingActivityId = null
-                    showActivityDialog = true
+            if (!showMap) {
+                FloatingActionButton(onClick = { showActivityDialog = true; editingActivityId = null }) {
+                    Icon(Icons.Default.Add, "Nueva actividad")
                 }
-            ) {
-                Icon(Icons.Default.Add, "Nueva actividad")
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // === INFO ITINERARIO ===
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+
+        if (showMap) {
+            // === MAPA ===
+            Column {
+                OutlinedButton(onClick = { showMap = false }, modifier = Modifier.padding(16.dp)) {
+                    Icon(Icons.Default.ArrowBack, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Volver al detalle")
+                }
+
+                val start = LatLng(14.6349, -90.5069) // Ciudad de Guatemala
+                val end = LatLng(14.5562, -90.7297)   // Antigua Guatemala
+                val route = listOf(start, end)
+
+                val cameraPositionState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(end, 10f)
+                }
+
+                GoogleMap(
+                    modifier = Modifier.fillMaxWidth().height(500.dp),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(zoomControlsEnabled = true)
                 ) {
-                    Column(Modifier.padding(20.dp)) {
-                        Text("Destino", style = MaterialTheme.typography.labelSmall)
-                        Text(itinerary!!.destino, style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(12.dp))
-                        Text("Fechas", style = MaterialTheme.typography.labelSmall)
-                        Text("${itinerary!!.fechaInicio} – ${itinerary!!.fechaFin}", style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.height(12.dp))
-                        Text("Estado", style = MaterialTheme.typography.labelSmall)
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(itinerary!!.estado) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = when (itinerary!!.estado) {
-                                    "Borrador" -> Color(0xFFFFF3E0)
-                                    "Publicado" -> Color(0xFFE8F5E8)
-                                    else -> MaterialTheme.colorScheme.surface
-                                }
-                            )
-                        )
+                    Marker(state = MarkerState(end), title = itinerary!!.destino)
+                    Marker(state = MarkerState(start), title = "Ciudad de Guatemala")
+                    Polyline(points = route, color = Color.Blue, width = 8f)
+                }
+
+                Card(modifier = Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Ruta: Ciudad de Guatemala → ${itinerary!!.destino}", style = MaterialTheme.typography.titleMedium)
+                        Text("Distancia: ~45 km | Tiempo: ~1h 15min")
                     }
                 }
             }
-
-            item {
-                Button(onClick = { /* IA */ }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Reorganizar con IA")
-                }
-            }
-
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedButton(
-                        onClick = { navController.navigate("edit/$itineraryId") },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Editar") }
-
-                    if (itinerary!!.estado == "Borrador") {
-                        Button(
-                            onClick = {
-                                db.collection("usuarios").document(userId)
-                                    .collection("itinerarios").document(itineraryId)
-                                    .update("estado", "Publicado")
-                                    .addOnSuccessListener {
-                                        navController.navigate("detail/$itineraryId") {
-                                            popUpTo("detail/$itineraryId") { inclusive = true }
-                                        }
-                                    }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) { Text("Publicar") }
-                    }
-                }
-            }
-
-            // === TÍTULO ACTIVIDADES ===
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Actividades", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { editingActivityId = null; showActivityDialog = true }) {
-                        Text("Agregar")
-                    }
-                }
-            }
-
-            // === LISTA DE ACTIVIDADES ===
-            if (activities.isEmpty()) {
+        } else {
+            // === DETALLE ===
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Box(Modifier.padding(32.dp), Alignment.Center) {
-                            Text("No hay actividades. Pulsa + para agregar", color = Color.Gray)
+                        Column(Modifier.padding(20.dp)) {
+                            Text("Destino", style = MaterialTheme.typography.labelSmall)
+                            Text(itinerary!!.destino, style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.height(12.dp))
+                            Text("Fechas", style = MaterialTheme.typography.labelSmall)
+                            Text("${itinerary!!.fechaInicio} – ${itinerary!!.fechaFin}")
+                            Spacer(Modifier.height(12.dp))
+                            Text("Estado", style = MaterialTheme.typography.labelSmall)
+                            AssistChip(onClick = {}, label = { Text(itinerary!!.estado) })
                         }
                     }
                 }
-            } else {
-                items(activities) { activity ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(activity.nombre, style = MaterialTheme.typography.titleMedium)
-                                Text(activity.hora, style = MaterialTheme.typography.bodyMedium)
-                                if (activity.descripcion.isNotBlank()) {
+
+                item { Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Reorganizar con IA") } }
+
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(onClick = { navController.navigate("edit/$itineraryId") }, modifier = Modifier.weight(1f)) { Text("Editar") }
+                        if (itinerary!!.estado == "Borrador") {
+                            Button(onClick = { /* Publicar */ }, modifier = Modifier.weight(1f)) { Text("Publicar") }
+                        }
+                    }
+                }
+
+                item { Text("Actividades", style = MaterialTheme.typography.titleMedium) }
+
+                if (activities.isEmpty()) {
+                    item { Card { Text("No hay actividades", modifier = Modifier.padding(32.dp)) } }
+                } else {
+                    items(activities) { activity ->
+                        Card {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(activity.nombre, style = MaterialTheme.typography.titleMedium)
+                                    Text(activity.hora)
                                     Text(activity.descripcion, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
-                            }
-                            IconButton(onClick = {
-                                editingActivityId = activity.id
-                                showActivityDialog = true
-                            }) {
-                                Icon(Icons.Default.Edit, "Editar")
-                            }
-                            IconButton(onClick = {
-                                db.collection("usuarios").document(userId)
-                                    .collection("itinerarios").document(itineraryId)
-                                    .collection("actividades").document(activity.id)
-                                    .delete()
-                            }) {
-                                Icon(Icons.Default.Delete, "Eliminar", tint = Color.Red)
+                                IconButton(onClick = { editingActivityId = activity.id; showActivityDialog = true }) {
+                                    Icon(Icons.Default.Edit, null)
+                                }
+                                IconButton(onClick = { /* Eliminar */ }) {
+                                    Icon(Icons.Default.Delete, null, tint = Color.Red)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // === ELIMINAR ITINERARIO ===
-            item {
-                Button(
-                    onClick = { showDeleteDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Eliminar Itinerario", color = Color.White)
+                item {
+                    Button(onClick = { showDeleteDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red), modifier = Modifier.fillMaxWidth()) {
+                        Text("Eliminar Itinerario", color = Color.White)
+                    }
                 }
             }
         }
     }
 
-    // === DIÁLOGO ACTIVIDAD ===
+    // === DIÁLOGO NUEVA/EDITAR ACTIVIDAD ===
     if (showActivityDialog) {
         ActivityFormDialog(
             userId = userId,

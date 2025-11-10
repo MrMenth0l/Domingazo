@@ -1,4 +1,3 @@
-// Archivo: ui/home/HomeScreen.kt
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.home
 
 import androidx.compose.foundation.Image
@@ -53,10 +52,18 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Mis Itinerarios", fontWeight = FontWeight.Bold) },
-                actions = { IconButton(onClick = onSettingsClick) { Icon(Icons.Default.Person, "Perfil") } }
+                actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Filled.Person, contentDescription = "Perfil")
+                    }
+                }
             )
         },
-        floatingActionButton = { FloatingActionButton(onClick = onNewItineraryClick) { Icon(Icons.Default.Add, "Nuevo") } }
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNewItineraryClick) {
+                Icon(Icons.Filled.Add, contentDescription = "Nuevo")
+            }
+        }
     ) { padding ->
         Box(Modifier.padding(padding)) {
             if (loading) {
@@ -64,17 +71,24 @@ fun HomeScreen(
             } else if (itinerarios.isEmpty()) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) { Text("No hay itinerarios") }
             } else {
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     items(itinerarios) { item ->
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable { onItineraryClick(item.id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onItineraryClick(item.id) },
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(Modifier.padding(16.dp)) {
                                 Image(
                                     painter = painterResource(R.drawable.ic_placeholder),
                                     contentDescription = null,
-                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)),
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                                 Spacer(Modifier.width(12.dp))
