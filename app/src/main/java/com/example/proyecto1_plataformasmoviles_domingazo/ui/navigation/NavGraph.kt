@@ -18,7 +18,7 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.settings.SettingsSc
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun NavGraph(startDestination: String) {
+fun NavGraph(startDestination: String = "login") {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val auth = FirebaseAuth.getInstance()
@@ -27,11 +27,7 @@ fun NavGraph(startDestination: String) {
 
         composable("login") {
             LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
+                onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onRegisterClick = { navController.navigate("register") },
                 snackbarHostState = snackbarHostState
             )
@@ -39,18 +35,14 @@ fun NavGraph(startDestination: String) {
 
         composable("register") {
             RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
+                onRegisterSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onBackToLogin = { navController.popBackStack() },
                 snackbarHostState = snackbarHostState
             )
         }
 
         composable("home") {
-            val userId = auth.currentUser?.uid ?: ""
+            val userId = auth.currentUser?.uid ?: return@composable
             HomeScreen(
                 userId = userId,
                 onItineraryClick = { id -> navController.navigate("detail/$id") },
@@ -60,7 +52,7 @@ fun NavGraph(startDestination: String) {
         }
 
         composable("create") {
-            val userId = auth.currentUser?.uid ?: ""
+            val userId = auth.currentUser?.uid ?: return@composable
             ItineraryFormScreen(
                 userId = userId,
                 onSaveSuccess = { navController.popBackStack() },
@@ -72,9 +64,28 @@ fun NavGraph(startDestination: String) {
             "detail/{itineraryId}",
             arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("itineraryId") ?: ""
-            val userId = auth.currentUser?.uid ?: ""
-            ItineraryScreen(itineraryId = id, userId = userId, onBackClick = { navController.popBackStack() })
+            val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: return@composable
+            val userId = auth.currentUser?.uid ?: return@composable
+            ItineraryScreen(
+                itineraryId = itineraryId,
+                userId = userId,
+                navController = navController,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            "edit/{itineraryId}",
+            arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: return@composable
+            val userId = auth.currentUser?.uid ?: return@composable
+            ItineraryFormScreen(
+                userId = userId,
+                itineraryId = itineraryId,
+                onSaveSuccess = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
         }
 
         composable("settings") {
@@ -82,9 +93,7 @@ fun NavGraph(startDestination: String) {
                 onBack = { navController.popBackStack() },
                 onLogout = {
                     auth.signOut()
-                    navController.navigate("login") {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
                 },
                 snackbarHostState = snackbarHostState
             )

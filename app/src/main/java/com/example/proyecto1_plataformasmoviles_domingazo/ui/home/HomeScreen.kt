@@ -1,3 +1,4 @@
+// Archivo: ui/home/HomeScreen.kt
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.home
 
 import androidx.compose.foundation.Image
@@ -21,16 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyecto1_plataformasmoviles_domingazo.R
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.Itinerary
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-
-data class Itinerario(
-    val id: String = "",
-    val destino: String = "",
-    val fechaInicio: String = "",
-    val fechaFin: String = "",
-    val estado: String = "Borrador"
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,16 +35,16 @@ fun HomeScreen(
     onNewItineraryClick: () -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
-    val itinerarios = remember { mutableStateOf<List<Itinerario>>(emptyList()) }
-    val loading = remember { mutableStateOf(true) }
+    var itinerarios by remember { mutableStateOf<List<Itinerary>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(userId) {
         db.collection("usuarios").document(userId).collection("itinerarios")
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, _ ->
-                loading.value = false
-                itinerarios.value = snap?.toObjects(Itinerario::class.java)?.mapIndexed { index, item ->
-                    item.copy(id = snap.documents[index].id)
+                loading = false
+                itinerarios = snap?.documents?.mapNotNull { doc ->
+                    doc.toObject(Itinerary::class.java)?.copy(id = doc.id)
                 } ?: emptyList()
             }
     }
@@ -65,13 +59,13 @@ fun HomeScreen(
         floatingActionButton = { FloatingActionButton(onClick = onNewItineraryClick) { Icon(Icons.Default.Add, "Nuevo") } }
     ) { padding ->
         Box(Modifier.padding(padding)) {
-            if (loading.value) {
+            if (loading) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-            } else if (itinerarios.value.isEmpty()) {
+            } else if (itinerarios.isEmpty()) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) { Text("No hay itinerarios") }
             } else {
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(itinerarios.value) { item ->
+                    items(itinerarios) { item ->
                         Card(
                             modifier = Modifier.fillMaxWidth().clickable { onItineraryClick(item.id) },
                             shape = RoundedCornerShape(16.dp)
@@ -89,9 +83,8 @@ fun HomeScreen(
                                     Text("${item.fechaInicio} – ${item.fechaFin}", color = Color.Gray)
                                     Surface(
                                         color = when (item.estado) {
-                                            "Activo" -> Color(0xFF2E7D32).copy(0.1f)
-                                            "Borrador" -> Color(0xFFF57C00).copy(0.1f)
-                                            else -> Color(0xFF616161).copy(0.1f)
+                                            "Publicado" -> Color(0xFFE8F5E8)
+                                            else -> Color(0xFFFFF3E0)
                                         },
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
@@ -99,9 +92,8 @@ fun HomeScreen(
                                             item.estado,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                             color = when (item.estado) {
-                                                "Activo" -> Color(0xFF2E7D32)
-                                                "Borrador" -> Color(0xFFF57C00)
-                                                else -> Color(0xFF616161)
+                                                "Publicado" -> Color(0xFF2E7D32)
+                                                else -> Color(0xFFF57C00)
                                             },
                                             fontSize = 12.sp
                                         )
