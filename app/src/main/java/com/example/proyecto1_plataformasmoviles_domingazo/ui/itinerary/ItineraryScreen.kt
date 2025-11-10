@@ -25,6 +25,7 @@ fun ItineraryScreen(
     var itinerary by remember { mutableStateOf<Itinerary?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) } // ← NUEVO
 
     val db = FirebaseFirestore.getInstance()
 
@@ -150,6 +151,47 @@ fun ItineraryScreen(
                     }
                 }
             }
+
+            // === BOTÓN ELIMINAR CON CONFIRMACIÓN ===
+            item {
+                Button(
+                    onClick = { showDeleteDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Eliminar Itinerario", color = Color.White)
+                }
+            }
         }
+    }
+
+    // === ALERTDIALOG DE CONFIRMACIÓN ===
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar itinerario") },
+            text = { Text("¿Estás seguro? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        db.collection("usuarios").document(userId)
+                            .collection("itinerarios").document(itineraryId)
+                            .delete()
+                            .addOnSuccessListener {
+                                navController.popBackStack("home", false)
+                            }
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
