@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.navigation.NavGraph
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.Proyecto1PlataformasmovilesDomingazoTheme
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.Proyecto1PlataformasMovilesDomingazoTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
 
         setContent {
-            Proyecto1PlataformasmovilesDomingazoTheme {
+            Proyecto1PlataformasMovilesDomingazoTheme {
                 val auth = FirebaseAuth.getInstance()
                 val user = auth.currentUser
                 NavGraph(startDestination = if (user == null) "login" else "home")

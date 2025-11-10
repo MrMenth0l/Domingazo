@@ -3,12 +3,10 @@ package com.example.proyecto1_plataformasmoviles_domingazo.ui.navigation
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.home.HomeScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.ItineraryFormScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.ItineraryScreen
@@ -22,12 +20,17 @@ fun NavGraph(startDestination: String = "login") {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
 
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable("login") {
             LoginScreen(
-                onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
                 onRegisterClick = { navController.navigate("register") },
                 snackbarHostState = snackbarHostState
             )
@@ -35,68 +38,73 @@ fun NavGraph(startDestination: String = "login") {
 
         composable("register") {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
+                onRegisterSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
                 onBackToLogin = { navController.popBackStack() },
                 snackbarHostState = snackbarHostState
             )
         }
 
-        composable("home") {
-            val userId = auth.currentUser?.uid ?: return@composable
-            HomeScreen(
-                userId = userId,
-                onItineraryClick = { id -> navController.navigate("detail/$id") },
-                onSettingsClick = { navController.navigate("settings") },
-                onNewItineraryClick = { navController.navigate("create") }
-            )
-        }
+        // RUTAS PROTEGIDAS: Solo si hay usuario
+        if (currentUser != null) {
+            composable("home") {
+                HomeScreen(
+                    userId = currentUser.uid,
+                    onItineraryClick = { id -> navController.navigate("detail/$id") },
+                    onSettingsClick = { navController.navigate("settings") },
+                    onNewItineraryClick = { navController.navigate("create") }
+                )
+            }
 
-        composable("create") {
-            val userId = auth.currentUser?.uid ?: return@composable
-            ItineraryFormScreen(
-                userId = userId,
-                onSaveSuccess = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
-            )
-        }
+            composable("create") {
+                ItineraryFormScreen(
+                    userId = currentUser.uid,
+                    onSaveSuccess = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
 
-        composable(
-            "detail/{itineraryId}",
-            arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: return@composable
-            val userId = auth.currentUser?.uid ?: return@composable
-            ItineraryScreen(
-                itineraryId = itineraryId,
-                userId = userId,
-                navController = navController,
-                onBackClick = { navController.popBackStack() }
-            )
-        }
+            composable(
+                "detail/{itineraryId}",
+                arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val itineraryId = backStackEntry.arguments?.getString("itineraryId")!!
+                ItineraryScreen(
+                    itineraryId = itineraryId,
+                    userId = currentUser.uid,
+                    navController = navController,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(
-            "edit/{itineraryId}",
-            arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: return@composable
-            val userId = auth.currentUser?.uid ?: return@composable
-            ItineraryFormScreen(
-                userId = userId,
-                itineraryId = itineraryId,
-                onSaveSuccess = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
-            )
-        }
+            composable(
+                "edit/{itineraryId}",
+                arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val itineraryId = backStackEntry.arguments?.getString("itineraryId")!!
+                ItineraryFormScreen(
+                    userId = currentUser.uid,
+                    itineraryId = itineraryId,
+                    onSaveSuccess = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
 
-        composable("settings") {
-            SettingsScreen(
-                onBack = { navController.popBackStack() },
-                onLogout = {
-                    auth.signOut()
-                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
-                },
-                snackbarHostState = snackbarHostState
-            )
+            composable("settings") {
+                SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        auth.signOut()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    snackbarHostState = snackbarHostState
+                )
+            }
         }
     }
 }
