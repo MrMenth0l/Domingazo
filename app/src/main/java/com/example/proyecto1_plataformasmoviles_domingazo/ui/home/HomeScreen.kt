@@ -20,8 +20,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.proyecto1_plataformasmoviles_domingazo.R
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.Itinerary
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
+import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
@@ -49,27 +52,34 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = Color(0xFFF5F7FA),
         topBar = {
-            TopAppBar(
-                title = { Text("Mis Itinerarios", fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { Text("Mis Itinerarios", fontWeight = FontWeight.Bold, color = IndigoPrimary) },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Person, contentDescription = "Perfil")
+                        Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = IndigoPrimary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNewItineraryClick) {
-                Icon(Icons.Filled.Add, contentDescription = "Nuevo")
+            FloatingActionButton(
+                onClick = onNewItineraryClick,
+                containerColor = AquaAccent
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Nuevo", tint = Color.White)
             }
         }
     ) { padding ->
         Box(Modifier.padding(padding)) {
             if (loading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = IndigoPrimary) }
             } else if (itinerarios.isEmpty()) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { Text("No hay itinerarios") }
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("No hay itinerarios", color = Color.Gray)
+                }
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
@@ -80,35 +90,45 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onItineraryClick(item.id) },
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            Row(Modifier.padding(16.dp)) {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_placeholder),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(RoundedCornerShape(12.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
+                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                // IMAGEN DEL DESTINO
+                                if (item.urlImagenDestino.isNotBlank()) {
+                                    AsyncImage(
+                                        model = item.urlImagenDestino,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_placeholder),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
                                 Spacer(Modifier.width(12.dp))
+
                                 Column {
-                                    Text(item.destino, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text(item.destino, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = IndigoPrimary)
                                     Text("${item.fechaInicio} – ${item.fechaFin}", color = Color.Gray)
+                                    Spacer(Modifier.height(4.dp))
                                     Surface(
-                                        color = when (item.estado) {
-                                            "Publicado" -> Color(0xFFE8F5E8)
-                                            else -> Color(0xFFFFF3E0)
-                                        },
+                                        color = if (item.estado == "Publicado") Color(0xFFE8F5E8) else Color(0xFFFFF3E0),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Text(
                                             item.estado,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            color = when (item.estado) {
-                                                "Publicado" -> Color(0xFF2E7D32)
-                                                else -> Color(0xFFF57C00)
-                                            },
+                                            color = if (item.estado == "Publicado") Color(0xFF2E7D32) else Color(0xFFF57C00),
                                             fontSize = 12.sp
                                         )
                                     }

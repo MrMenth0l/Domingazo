@@ -9,6 +9,7 @@ data class Itinerary(
     val fechaFin: String = "",
     val descripcion: String = "",
     val estado: String = "Borrador",
+    val urlImagenDestino: String = "",
 
     @PropertyName("createdAt")
     val createdAt: Timestamp = Timestamp.now(),

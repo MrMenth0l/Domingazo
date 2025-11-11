@@ -76,8 +76,11 @@ dependencies {
     // Google Maps
     implementation(libs.maps.compose)
 
-    // ICONOS (MATERIAL 1 - Compatible con Material 3)
+    // ICONOS
     implementation(libs.material.icons.extended)
+
+    // COIL (IMÁGENES)
+    implementation(libs.coil.compose)
 
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
