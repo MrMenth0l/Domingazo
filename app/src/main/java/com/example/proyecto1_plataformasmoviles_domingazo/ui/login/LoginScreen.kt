@@ -1,114 +1,122 @@
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.login
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    navController: NavController,
+    onLoginSuccess: (String) -> Unit,
     onRegisterClick: () -> Unit,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState  // ← AGREGADO
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-    var loginButtonPressed by remember { mutableStateOf(false) }
-    val loginButtonScale by animateFloatAsState(if (loginButtonPressed) 0.95f else 1f)
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
-
-    fun isValidEmail(e: String) = e.contains("@") && e.contains(".")
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF5F7FA)
+        containerColor = Color(0xFFF5F7FA),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Iniciar Sesión", color = IndigoPrimary) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+            )
+        }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
-                .background(Brush.verticalGradient(listOf(Color(0xFFF5F7FA), Color.White))),
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Bienvenido", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 28.sp, color = IndigoPrimary), modifier = Modifier.padding(bottom = 32.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Correo") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = IndigoPrimary,
+                    cursorColor = AquaAccent
+                )
+            )
 
-            Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = email, onValueChange = { email = it; emailError = !isValidEmail(it) },
-                        label = { Text("Correo") }, leadingIcon = { Icon(Icons.Default.Email, "", tint = IndigoPrimary) },
-                        isError = emailError, supportingText = { if (emailError) Text("Correo inválido", color = MaterialTheme.colorScheme.error) },
-                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
-                    )
-                    OutlinedTextField(
-                        value = password, onValueChange = { password = it; passwordError = it.isBlank() },
-                        label = { Text("Contraseña") }, leadingIcon = { Icon(Icons.Default.Lock, "", tint = IndigoPrimary) },
-                        visualTransformation = PasswordVisualTransformation(), isError = passwordError,
-                        supportingText = { if (passwordError) Text("Requerida", color = MaterialTheme.colorScheme.error) },
-                        modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
-                    )
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = IndigoPrimary,
+                    cursorColor = AquaAccent
+                )
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            if (error != null) {
+                Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
+            }
+
+            Button(
+                onClick = {
+                    if (email.isBlank() || password.isBlank()) {
+                        error = "Completa todos los campos"
+                        return@Button
+                    }
+                    loading = true
+                    scope.launch {
+                        try {
+                            auth.signInWithEmailAndPassword(email, password).await()
+                            val userId = auth.currentUser?.uid ?: return@launch
+                            onLoginSuccess(userId)
+                        } catch (e: Exception) {
+                            error = "Error: ${e.message}"
+                            // Mostrar error en snackbar (opcional)
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(e.message ?: "Error desconocido")
+                            }
+                        } finally {
+                            loading = false
+                        }
+                    }
+                },
+                enabled = !loading,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(Modifier.size(16.dp), color = Color.White)
+                } else {
+                    Text("Iniciar Sesión", color = Color.White)
                 }
             }
 
-            Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = {
-                        loginButtonPressed = true
-                        emailError = !isValidEmail(email); passwordError = password.isBlank()
-                        if (!emailError && !passwordError) {
-                            scope.launch {
-                                try {
-                                    val result = auth.signInWithEmailAndPassword(email, password).await()
-                                    val userId = result.user?.uid ?: return@launch
-                                    val doc = db.collection("usuarios").document(userId).get().await()
-                                    if (!doc.exists()) {
-                                        db.collection("usuarios").document(userId).set(
-                                            hashMapOf("nombre" to "Usuario", "email" to email, "bio" to "")
-                                        ).await()
-                                    }
-                                    snackbarHostState.showSnackbar("¡Bienvenido!")
-                                    onLoginSuccess()
-                                } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Error: ${e.message}")
-                                }
-                            }
-                        }
-                        loginButtonPressed = false
-                    },
-                    modifier = Modifier.weight(1f).scale(loginButtonScale),
-                    colors = ButtonDefaults.buttonColors(AquaAccent)
-                ) { Text("Iniciar sesión") }
+            Spacer(Modifier.height(16.dp))
 
-                OutlinedButton(
-                    onClick = onRegisterClick, modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
-                    border = BorderStroke(1.dp, IndigoPrimary)
-                ) { Text("Registrarse") }
+            TextButton(onClick = onRegisterClick) {
+                Text("¿No tienes cuenta? Regístrate", color = IndigoPrimary)
             }
         }
     }

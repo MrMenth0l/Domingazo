@@ -1,8 +1,7 @@
 package com.example.proyecto1_plataformasmoviles_domingazo.ui.navigation
 
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,21 +13,44 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.login.LoginScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.register.RegisterScreen
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.settings.SettingsScreen
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @Composable
 fun NavGraph(startDestination: String = "login") {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val auth = FirebaseAuth.getInstance()
-    val currentUser = auth.currentUser
+    val scope = rememberCoroutineScope()
+
+    var currentUser by remember { mutableStateOf(auth.currentUser) }
+
+    // Escucha cambios de autenticación
+    LaunchedEffect(Unit) {
+        auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            currentUser = user
+
+            scope.launch {
+                if (user == null) {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
 
+        // === LOGIN ===
         composable("login") {
             LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                navController = navController,
+                onLoginSuccess = { userId ->
+                    userId?.let { uid ->
+                        navController.navigate("home/$uid") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     }
                 },
                 onRegisterClick = { navController.navigate("register") },
@@ -36,11 +58,16 @@ fun NavGraph(startDestination: String = "login") {
             )
         }
 
+        // === REGISTRO ===
         composable("register") {
             RegisterScreen(
+                navController = navController,
                 onRegisterSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                    val userId = auth.currentUser?.uid
+                    if (userId != null) {
+                        navController.navigate("home/$userId") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     }
                 },
                 onBackToLogin = { navController.popBackStack() },
@@ -48,45 +75,101 @@ fun NavGraph(startDestination: String = "login") {
             )
         }
 
-        // RUTAS PROTEGIDAS: Solo si hay usuario
+        // === PANTALLAS PROTEGIDAS ===
         if (currentUser != null) {
-            composable("home") {
+            val userId = currentUser!!.uid
+
+            composable(
+                "home/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getString("userId") ?: run {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                    }
+                    return@composable
+                }
+
+                if (uid != userId) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("home/$userId") {
+                            popUpTo("home/{userId}") { inclusive = true }
+                        }
+                    }
+                    return@composable
+                }
+
                 HomeScreen(
-                    userId = currentUser.uid,
-                    onItineraryClick = { id -> navController.navigate("detail/$id") },
+                    userId = uid,
+                    onItineraryClick = { itineraryId ->
+                        navController.navigate("detail/$uid/$itineraryId")
+                    },
                     onSettingsClick = { navController.navigate("settings") },
-                    onNewItineraryClick = { navController.navigate("create") }
+                    onNewItineraryClick = { navController.navigate("create/$uid") }
                 )
             }
 
-            composable("create") {
+            composable(
+                "create/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getString("userId") ?: run {
+                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
+                    return@composable
+                }
+                if (uid != userId) return@composable
+
                 ItineraryFormScreen(
-                    userId = currentUser.uid,
+                    userId = uid,
                     onSaveSuccess = { navController.popBackStack() },
                     onCancel = { navController.popBackStack() }
                 )
             }
 
             composable(
-                "detail/{itineraryId}",
-                arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
+                "detail/{userId}/{itineraryId}",
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("itineraryId") { type = NavType.StringType }
+                )
             ) { backStackEntry ->
-                val itineraryId = backStackEntry.arguments?.getString("itineraryId")!!
+                val uid = backStackEntry.arguments?.getString("userId") ?: run {
+                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
+                    return@composable
+                }
+                val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: run {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
+                }
+                if (uid != userId) return@composable
+
                 ItineraryScreen(
                     itineraryId = itineraryId,
-                    userId = currentUser.uid,
+                    userId = uid,
                     navController = navController,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
             composable(
-                "edit/{itineraryId}",
-                arguments = listOf(navArgument("itineraryId") { type = NavType.StringType })
+                "edit/{userId}/{itineraryId}",
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("itineraryId") { type = NavType.StringType }
+                )
             ) { backStackEntry ->
-                val itineraryId = backStackEntry.arguments?.getString("itineraryId")!!
+                val uid = backStackEntry.arguments?.getString("userId") ?: run {
+                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
+                    return@composable
+                }
+                val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: run {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
+                }
+                if (uid != userId) return@composable
+
                 ItineraryFormScreen(
-                    userId = currentUser.uid,
+                    userId = uid,
                     itineraryId = itineraryId,
                     onSaveSuccess = { navController.popBackStack() },
                     onCancel = { navController.popBackStack() }
@@ -96,14 +179,23 @@ fun NavGraph(startDestination: String = "login") {
             composable("settings") {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onLogout = {
-                        auth.signOut()
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
+                    onLogout = { auth.signOut() },
                     snackbarHostState = snackbarHostState
                 )
+            }
+        }
+
+        // === REDIRECCIÓN AUTOMÁTICA SI NO HAY USUARIO ===
+        else {
+            composable(
+                route = "{path}",
+                arguments = listOf(navArgument("path") { type = NavType.StringType })
+            ) {
+                LaunchedEffect(Unit) {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             }
         }
     }

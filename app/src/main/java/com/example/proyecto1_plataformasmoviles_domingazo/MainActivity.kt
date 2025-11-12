@@ -17,7 +17,8 @@ class MainActivity : ComponentActivity() {
             Proyecto1PlataformasMovilesDomingazoTheme {
                 val auth = FirebaseAuth.getInstance()
                 val user = auth.currentUser
-                NavGraph(startDestination = if (user == null) "login" else "home")
+                val startDestination = if (user != null) "home/${user.uid}" else "login"
+                NavGraph(startDestination = startDestination)
             }
         }
     }
