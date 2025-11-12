@@ -232,18 +232,24 @@ fun ItineraryScreen(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(
-                            onClick = { navController.navigate("edit/$itineraryId") },
+                            onClick = {
+                                navController.navigate("edit/$userId/$itineraryId")
+                            },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
                             border = BorderStroke(1.dp, IndigoPrimary)
-                        ) { Text("Editar") }
+                        ) {
+                            Text("Editar")
+                        }
 
                         if (itinerary!!.estado == "Borrador") {
                             Button(
                                 onClick = { /* Publicar */ },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
-                            ) { Text("Publicar") }
+                            ) {
+                                Text("Publicar")
+                            }
                         }
                     }
                 }
