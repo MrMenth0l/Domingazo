@@ -323,7 +323,16 @@ fun ItineraryScreen(
                         db.collection("usuarios").document(userId)
                             .collection("itinerarios").document(itineraryId)
                             .delete()
-                            .addOnSuccessListener { navController.popBackStack("home", false) }
+                            .addOnSuccessListener {
+                                // Navegar a home del usuario y limpiar el stack
+                                navController.navigate("home/$userId") {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                            }
+                            .addOnFailureListener {
+                                // Opcional: mostrar error
+                            }
                         showDeleteDialog = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
