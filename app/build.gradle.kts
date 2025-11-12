@@ -82,6 +82,9 @@ dependencies {
     // COIL (IMÁGENES)
     implementation(libs.coil.compose)
 
+    // DATASTORE (para guardar modo oscuro)
+    implementation(libs.androidx.datastore.preferences)
+
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
@@ -93,6 +96,6 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 
-    //Date confirmation
+    // Date confirmation
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 }

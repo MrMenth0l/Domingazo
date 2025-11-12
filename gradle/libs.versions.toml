@@ -47,6 +47,9 @@ material-icons-extended = { group = "androidx.compose.material", name = "materia
 # COIL (IMÁGENES)
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
+# === DATASTORE (para modo oscuro) ===
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version = "1.0.0" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
