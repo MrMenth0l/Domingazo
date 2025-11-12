@@ -17,6 +17,9 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +41,7 @@ fun ItineraryFormScreen(
 
     val db = FirebaseFirestore.getInstance()
 
+    // Cargar datos si es edición
     LaunchedEffect(itineraryId) {
         if (itineraryId != null) {
             loading = true
@@ -61,6 +65,29 @@ fun ItineraryFormScreen(
                 loading = false
             }
         }
+    }
+
+    // === FUNCIÓN DE VALIDACIÓN DE FECHAS ===
+    fun validarFechas(): String? {
+        if (destino.isBlank()) return "El destino es obligatorio"
+        if (fechaInicio.isBlank()) return "La fecha de inicio es obligatoria"
+        if (fechaFin.isBlank()) return "La fecha de fin es obligatoria"
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        try {
+            val inicio = LocalDate.parse(fechaInicio, formatter)
+            val fin = LocalDate.parse(fechaFin, formatter)
+
+            if (fin.isBefore(inicio)) {
+                return "La fecha de fin no puede ser anterior a la de inicio"
+            }
+            if (inicio.isBefore(LocalDate.now().minusDays(1))) {
+                return "La fecha de inicio no puede ser en el pasado"
+            }
+        } catch (e: DateTimeParseException) {
+            return "Formato de fecha inválido. Usa: AAAA-MM-DD"
+        }
+        return null
     }
 
     if (loading) {
@@ -127,16 +154,20 @@ fun ItineraryFormScreen(
                 value = fechaInicio,
                 onValueChange = { fechaInicio = it },
                 label = { Text("Fecha Inicio (YYYY-MM-DD)") },
+                placeholder = { Text("2025-04-15") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent)
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent),
+                supportingText = { Text("Ej: 2025-04-15") }
             )
 
             OutlinedTextField(
                 value = fechaFin,
                 onValueChange = { fechaFin = it },
                 label = { Text("Fecha Fin (YYYY-MM-DD)") },
+                placeholder = { Text("2025-04-20") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent)
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent),
+                supportingText = { Text("Debe ser posterior a la fecha de inicio") }
             )
 
             OutlinedTextField(
@@ -165,16 +196,18 @@ fun ItineraryFormScreen(
                 }
             }
 
-            if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error)
+            // Mostrar error de validación
+            error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
 
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 TextButton(onClick = onCancel) { Text("Cancelar") }
                 Button(
                     onClick = {
-                        if (destino.isBlank() || fechaInicio.isBlank() || fechaFin.isBlank()) {
-                            error = "Completa los campos obligatorios"
-                            return@Button
-                        }
+                        error = validarFechas()
+                        if (error != null) return@Button
+
                         loading = true
                         val data = hashMapOf(
                             "destino" to destino,
@@ -190,8 +223,12 @@ fun ItineraryFormScreen(
                         } else {
                             db.collection("usuarios").document(userId).collection("itinerarios").document(itineraryId)
                         }
-                        ref.set(data).addOnSuccessListener { onSaveSuccess() }
-                            .addOnFailureListener { error = "Error al guardar"; loading = false }
+                        ref.set(data)
+                            .addOnSuccessListener { onSaveSuccess() }
+                            .addOnFailureListener {
+                                error = "Error al guardar"
+                                loading = false
+                            }
                     },
                     enabled = !loading,
                     colors = ButtonDefaults.buttonColors(AquaAccent)

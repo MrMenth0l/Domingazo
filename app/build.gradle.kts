@@ -92,4 +92,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    //Date confirmation
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 }
