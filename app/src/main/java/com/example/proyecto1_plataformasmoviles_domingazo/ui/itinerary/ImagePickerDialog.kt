@@ -12,13 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -37,6 +34,7 @@ fun ImagePickerDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val storage = FirebaseStorage.getInstance()
+    val colorScheme = MaterialTheme.colorScheme
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -46,8 +44,8 @@ fun ImagePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        title = { Text("Imagen del Destino", color = IndigoPrimary) },
+        containerColor = colorScheme.surface,
+        title = { Text("Imagen del Destino", color = colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
@@ -57,11 +55,11 @@ fun ImagePickerDialog(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(AquaAccent)
+                    colors = ButtonDefaults.buttonColors(colorScheme.primary)
                 ) {
-                    Icon(Icons.Default.Image, null, tint = Color.White)
+                    Icon(Icons.Default.Image, null, tint = colorScheme.onPrimary)
                     Spacer(Modifier.width(8.dp))
-                    Text("Seleccionar Imagen", color = Color.White)
+                    Text("Seleccionar Imagen", color = colorScheme.onPrimary)
                 }
 
                 selectedImageUri?.let { uri ->
@@ -77,7 +75,7 @@ fun ImagePickerDialog(
                 }
 
                 if (uploading) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = colorScheme.primary)
                 }
             }
         },
@@ -103,9 +101,9 @@ fun ImagePickerDialog(
                     }
                 },
                 enabled = selectedImageUri != null && !uploading,
-                colors = ButtonDefaults.buttonColors(AquaAccent)
+                colors = ButtonDefaults.buttonColors(colorScheme.primary)
             ) {
-                Text("Subir", color = Color.White)
+                Text("Subir", color = colorScheme.onPrimary)
             }
         },
         dismissButton = {

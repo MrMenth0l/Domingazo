@@ -15,12 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +35,17 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
         return date.matches(regex)
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colorScheme.primary,
+        unfocusedBorderColor = colorScheme.outline,
+        focusedLabelColor = colorScheme.primary,
+        unfocusedLabelColor = colorScheme.onSurfaceVariant,
+        cursorColor = colorScheme.secondary,
+        focusedContainerColor = colorScheme.surface,
+        unfocusedContainerColor = colorScheme.surface
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -46,7 +54,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         "Nuevo Itinerario",
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
-                        color = IndigoPrimary
+                        color = colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -54,7 +62,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Volver a la pantalla anterior",
-                            tint = IndigoPrimary
+                            tint = colorScheme.primary
                         )
                     }
                 },
@@ -71,17 +79,17 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         Icon(
                             Icons.Default.Check,
                             contentDescription = "Guardar itinerario",
-                            tint = AquaAccent
+                            tint = colorScheme.secondary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = IndigoPrimary
+                    containerColor = colorScheme.surface,
+                    titleContentColor = colorScheme.onSurface
                 )
             )
         },
-        containerColor = Color(0xFFF5F7FA) // Fondo claro consistente con HomeScreen
+        containerColor = colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -90,7 +98,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                 .padding(horizontal = 16.dp, vertical = 20.dp)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF5F7FA), Color.White)
+                        colors = listOf(colorScheme.background, colorScheme.surface)
                     )
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -102,7 +110,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp,
-                    color = IndigoPrimary
+                    color = colorScheme.primary
                 )
             )
 
@@ -128,12 +136,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         )
                     }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    unfocusedBorderColor = Color(0xFF757575),
-                    focusedLabelColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                ),
+                colors = textFieldColors,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
             )
 
@@ -159,12 +162,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         )
                     }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    unfocusedBorderColor = Color(0xFF757575),
-                    focusedLabelColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                ),
+                colors = textFieldColors,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
             )
 
@@ -177,12 +175,7 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                     .fillMaxWidth()
                     .height(120.dp)
                     .clip(RoundedCornerShape(12.dp)),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    unfocusedBorderColor = Color(0xFF757575),
-                    focusedLabelColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                ),
+                colors = textFieldColors,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp)
             )
 
@@ -199,9 +192,9 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp)),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF757575)
+                        contentColor = colorScheme.onSurface
                     ),
-                    border = BorderStroke(1.dp, Color(0xFF757575))
+                    border = BorderStroke(1.dp, colorScheme.outline)
                 ) {
                     Text("Cancelar", fontSize = 16.sp)
                 }
@@ -220,8 +213,8 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                         .scale(buttonScale)
                         .clip(RoundedCornerShape(12.dp)),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AquaAccent,
-                        contentColor = Color.White
+                        containerColor = colorScheme.primary,
+                        contentColor = colorScheme.onPrimary
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp,
@@ -233,14 +226,14 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
             }
 
             // Tarjeta de vista previa
-            if (destino.isNotBlank() && fecha.isNotBlank() && !destinoError && !fechaError) {
+                if (destino.isNotBlank() && fecha.isNotBlank() && !destinoError && !fechaError) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = colorScheme.surface
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
@@ -253,14 +246,14 @@ fun NewItineraryScreen(onBackClick: () -> Unit, onSaveClick: (String, String) ->
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
-                                color = IndigoPrimary
+                                color = colorScheme.primary
                             )
                         )
                         Text(
                             text = fecha,
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 14.sp,
-                                color = Color(0xFF757575)
+                                color = colorScheme.onSurfaceVariant
                             )
                         )
                     }

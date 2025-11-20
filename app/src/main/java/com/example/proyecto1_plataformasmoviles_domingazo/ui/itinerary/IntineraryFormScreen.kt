@@ -8,12 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -40,6 +37,16 @@ fun ItineraryFormScreen(
     var showImageDialog by remember { mutableStateOf(false) }
 
     val db = FirebaseFirestore.getInstance()
+    val colorScheme = MaterialTheme.colorScheme
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colorScheme.primary,
+        unfocusedBorderColor = colorScheme.outline,
+        focusedLabelColor = colorScheme.primary,
+        unfocusedLabelColor = colorScheme.onSurfaceVariant,
+        cursorColor = colorScheme.secondary,
+        focusedContainerColor = colorScheme.surface,
+        unfocusedContainerColor = colorScheme.surface
+    )
 
     // Cargar datos si es edición
     LaunchedEffect(itineraryId) {
@@ -91,21 +98,25 @@ fun ItineraryFormScreen(
     }
 
     if (loading) {
-        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = colorScheme.primary) }
         return
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
+        containerColor = colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if (itineraryId == null) "Nuevo Itinerario" else "Editar", color = IndigoPrimary) },
+                title = { Text(if (itineraryId == null) "Nuevo Itinerario" else "Editar", color = colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
-                        Icon(Icons.Default.ArrowBack, "Cancelar", tint = IndigoPrimary)
+                        Icon(Icons.Default.ArrowBack, "Cancelar", tint = colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = colorScheme.surface,
+                    navigationIconContentColor = colorScheme.primary,
+                    titleContentColor = colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -117,7 +128,7 @@ fun ItineraryFormScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // IMAGEN
-            Card(colors = CardDefaults.cardColors(Color.White)) {
+            Card(colors = CardDefaults.cardColors(colorScheme.surface)) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -135,9 +146,9 @@ fun ItineraryFormScreen(
                     }
                     Button(
                         onClick = { showImageDialog = true },
-                        colors = ButtonDefaults.buttonColors(AquaAccent)
+                        colors = ButtonDefaults.buttonColors(colorScheme.secondary)
                     ) {
-                        Text(if (urlImagenDestino.isBlank()) "Agregar Imagen" else "Cambiar", color = Color.White)
+                        Text(if (urlImagenDestino.isBlank()) "Agregar Imagen" else "Cambiar", color = colorScheme.onSecondary)
                     }
                 }
             }
@@ -147,7 +158,7 @@ fun ItineraryFormScreen(
                 onValueChange = { destino = it },
                 label = { Text("Destino") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent)
+                colors = textFieldColors
             )
 
             OutlinedTextField(
@@ -156,7 +167,7 @@ fun ItineraryFormScreen(
                 label = { Text("Fecha Inicio (YYYY-MM-DD)") },
                 placeholder = { Text("2025-04-15") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent),
+                colors = textFieldColors,
                 supportingText = { Text("Ej: 2025-04-15") }
             )
 
@@ -166,7 +177,7 @@ fun ItineraryFormScreen(
                 label = { Text("Fecha Fin (YYYY-MM-DD)") },
                 placeholder = { Text("2025-04-20") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent),
+                colors = textFieldColors,
                 supportingText = { Text("Debe ser posterior a la fecha de inicio") }
             )
 
@@ -175,7 +186,7 @@ fun ItineraryFormScreen(
                 onValueChange = { descripcion = it },
                 label = { Text("Descripción") },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary, cursorColor = AquaAccent)
+                colors = textFieldColors
             )
 
             var expanded by remember { mutableStateOf(false) }
@@ -187,7 +198,7 @@ fun ItineraryFormScreen(
                     label = { Text("Estado") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                    colors = textFieldColors
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     listOf("Borrador", "Publicado").forEach { option ->
@@ -227,14 +238,14 @@ fun ItineraryFormScreen(
                             .addOnSuccessListener { onSaveSuccess() }
                             .addOnFailureListener {
                                 error = "Error al guardar"
-                                loading = false
-                            }
+                            loading = false
+                        }
                     },
                     enabled = !loading,
-                    colors = ButtonDefaults.buttonColors(AquaAccent)
+                    colors = ButtonDefaults.buttonColors(colorScheme.primary)
                 ) {
-                    if (loading) CircularProgressIndicator(Modifier.size(16.dp), color = Color.White)
-                    else Text("Guardar", color = Color.White)
+                    if (loading) CircularProgressIndicator(Modifier.size(16.dp), color = colorScheme.onPrimary)
+                    else Text("Guardar", color = colorScheme.onPrimary)
                 }
             }
         }

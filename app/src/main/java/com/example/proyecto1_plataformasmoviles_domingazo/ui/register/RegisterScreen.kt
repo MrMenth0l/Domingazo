@@ -7,12 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
@@ -35,17 +32,28 @@ fun RegisterScreen(
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
+    val colorScheme = MaterialTheme.colorScheme
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colorScheme.primary,
+        unfocusedBorderColor = colorScheme.outline,
+        focusedLabelColor = colorScheme.primary,
+        unfocusedLabelColor = colorScheme.onSurfaceVariant,
+        cursorColor = colorScheme.secondary,
+        focusedContainerColor = colorScheme.surface,
+        unfocusedContainerColor = colorScheme.surface
+    )
+
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
+        containerColor = colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Registrarse", color = IndigoPrimary) },
+                title = { Text("Registrarse", color = colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBackToLogin) {
-                        Icon(Icons.Filled.ArrowBack, "Volver", tint = IndigoPrimary)  // ← Icons.Filled
+                        Icon(Icons.Filled.ArrowBack, "Volver", tint = colorScheme.primary)  // ← Icons.Filled
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = colorScheme.surface)
             )
         }
     ) { padding ->
@@ -62,10 +70,7 @@ fun RegisterScreen(
                 onValueChange = { email = it },
                 label = { Text("Correo") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                )
+                colors = textFieldColors
             )
 
             Spacer(Modifier.height(16.dp))
@@ -76,10 +81,7 @@ fun RegisterScreen(
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                )
+                colors = textFieldColors
             )
 
             Spacer(Modifier.height(16.dp))
@@ -90,10 +92,7 @@ fun RegisterScreen(
                 label = { Text("Confirmar Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                )
+                colors = textFieldColors
             )
 
             Spacer(Modifier.height(24.dp))
@@ -126,12 +125,12 @@ fun RegisterScreen(
                 },
                 enabled = !loading,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
+                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)
             ) {
                 if (loading) {
-                    CircularProgressIndicator(Modifier.size(16.dp), color = Color.White)
+                    CircularProgressIndicator(Modifier.size(16.dp), color = colorScheme.onPrimary)
                 } else {
-                    Text("Registrarse", color = Color.White)
+                    Text("Registrarse", color = colorScheme.onPrimary)
                 }
             }
         }

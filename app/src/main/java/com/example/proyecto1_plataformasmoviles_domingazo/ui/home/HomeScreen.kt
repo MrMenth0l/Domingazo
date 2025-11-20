@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,8 +22,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.proyecto1_plataformasmoviles_domingazo.R
 import com.example.proyecto1_plataformasmoviles_domingazo.ui.itinerary.Itinerary
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
@@ -51,34 +48,41 @@ fun HomeScreen(
             }
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
+        containerColor = colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Mis Itinerarios", fontWeight = FontWeight.Bold, color = IndigoPrimary) },
+                title = { Text("Mis Itinerarios", fontWeight = FontWeight.Bold, color = colorScheme.onSurface) },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = IndigoPrimary)
+                        Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = colorScheme.surface,
+                    actionIconContentColor = colorScheme.primary,
+                    titleContentColor = colorScheme.onSurface
+                )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNewItineraryClick,
-                containerColor = AquaAccent
+                containerColor = colorScheme.secondary,
+                contentColor = colorScheme.onSecondary
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Nuevo", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Nuevo")
             }
         }
     ) { padding ->
-        Box(Modifier.padding(padding)) {
+        Box(Modifier.padding(padding).fillMaxSize()) {
             if (loading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = IndigoPrimary) }
+                Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = colorScheme.primary) }
             } else if (itinerarios.isEmpty()) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("No hay itinerarios", color = Color.Gray)
+                    Text("No hay itinerarios", color = colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -86,12 +90,16 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(itinerarios) { item ->
+                        val isPublished = item.estado.equals("Publicado", ignoreCase = true)
+                        val statusContainer = if (isPublished) colorScheme.secondaryContainer else colorScheme.tertiaryContainer
+                        val statusText = if (isPublished) colorScheme.onSecondaryContainer else colorScheme.onTertiaryContainer
+
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onItineraryClick(item.id) },
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                            colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
                         ) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 // IMAGEN DEL DESTINO
@@ -118,17 +126,17 @@ fun HomeScreen(
                                 Spacer(Modifier.width(12.dp))
 
                                 Column {
-                                    Text(item.destino, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = IndigoPrimary)
-                                    Text("${item.fechaInicio} – ${item.fechaFin}", color = Color.Gray)
+                                    Text(item.destino, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = colorScheme.primary)
+                                    Text("${item.fechaInicio} – ${item.fechaFin}", color = colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.height(4.dp))
                                     Surface(
-                                        color = if (item.estado == "Publicado") Color(0xFFE8F5E8) else Color(0xFFFFF3E0),
+                                        color = statusContainer,
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Text(
                                             item.estado,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            color = if (item.estado == "Publicado") Color(0xFF2E7D32) else Color(0xFFF57C00),
+                                            color = statusText,
                                             fontSize = 12.sp
                                         )
                                     }

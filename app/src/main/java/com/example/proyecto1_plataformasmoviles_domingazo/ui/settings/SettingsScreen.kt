@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,9 +31,9 @@ import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.SettingsRepos
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onLogout: () -> Unit,
-    snackbarHostState: SnackbarHostState
-) {
+                    onLogout: () -> Unit,
+                    snackbarHostState: SnackbarHostState
+                ) {
     val auth = FirebaseAuth.getInstance()
     val user = auth.currentUser ?: run { onBack(); return }
     val userId = user.uid
@@ -42,6 +41,16 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val settingsRepo = remember { SettingsRepository(context) }
+    val colorScheme = MaterialTheme.colorScheme
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colorScheme.primary,
+        unfocusedBorderColor = colorScheme.outline,
+        focusedLabelColor = colorScheme.primary,
+        unfocusedLabelColor = colorScheme.onSurfaceVariant,
+        cursorColor = colorScheme.secondary,
+        focusedContainerColor = colorScheme.surface,
+        unfocusedContainerColor = colorScheme.surface
+    )
 
     // === ESTADO DEL MODO OSCURO ===
     val isDarkMode by settingsRepo.isDarkMode.collectAsState(initial = false)
@@ -94,10 +103,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Usuario", fontWeight = FontWeight.Bold, color = IndigoPrimary) },
+                title = { Text("Perfil de Usuario", fontWeight = FontWeight.Bold, color = colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "", tint = IndigoPrimary)
+                        Icon(Icons.Default.ArrowBack, "", tint = colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -117,7 +126,7 @@ fun SettingsScreen(
             // === AVATAR ===
             Surface(
                 shape = CircleShape,
-                color = AquaAccent.copy(0.2f),
+                color = colorScheme.secondaryContainer,
                 shadowElevation = 8.dp,
                 modifier = Modifier.size(120.dp)
             ) {
@@ -125,7 +134,7 @@ fun SettingsScreen(
                     Icons.Default.Person,
                     "Avatar",
                     modifier = Modifier.fillMaxSize().padding(24.dp),
-                    tint = AquaAccent
+                    tint = colorScheme.secondary
                 )
             }
 
@@ -143,7 +152,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
                             contentDescription = null,
-                            tint = IndigoPrimary
+                            tint = colorScheme.primary
                         )
                     },
                     trailingContent = {
@@ -172,7 +181,7 @@ fun SettingsScreen(
                             isError = nameError,
                             supportingText = { if (nameError) Text("Requerido", color = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                            colors = textFieldColors
                         )
                         OutlinedTextField(
                             value = email,
@@ -181,30 +190,31 @@ fun SettingsScreen(
                             isError = emailError,
                             supportingText = { if (emailError) Text("Correo inválido", color = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = IndigoPrimary)
+                            colors = textFieldColors
                         )
                         OutlinedTextField(
                             value = bio,
                             onValueChange = { bio = it },
                             label = { Text("Bio") },
-                            modifier = Modifier.fillMaxWidth().height(100.dp)
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            colors = textFieldColors
                         )
                     } else {
                         Text(
                             name,
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = IndigoPrimary
+                                color = colorScheme.primary
                             )
                         )
                         Text(
                             email,
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF757575))
+                            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurfaceVariant)
                         )
                         if (bio.isNotBlank()) {
                             Text(
                                 bio,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF757575))
+                                style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurfaceVariant)
                             )
                         }
                     }
@@ -241,30 +251,30 @@ fun SettingsScreen(
                         editButtonPressed = false
                     },
                     modifier = Modifier.weight(1f).scale(editButtonScale),
-                    colors = ButtonDefaults.buttonColors(AquaAccent)
+                    colors = ButtonDefaults.buttonColors(colorScheme.primary)
                 ) {
-                    Text(if (isEditing) "Guardar" else "Editar")
+                    Text(if (isEditing) "Guardar" else "Editar", color = colorScheme.onPrimary)
                 }
 
                 OutlinedButton(
                     onClick = { showLogoutDialog = true },
                     modifier = Modifier.weight(1f).scale(logoutButtonScale),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                    border = BorderStroke(1.dp, Color.Red)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.error),
+                    border = BorderStroke(1.dp, colorScheme.error)
                 ) {
-                    Text("Logout", color = Color.Red)
+                    Text("Logout", color = colorScheme.error)
                 }
             }
 
             // === DIÁLOGO LOGOUT ===
-            if (showLogoutDialog) {
+                    if (showLogoutDialog) {
                 AlertDialog(
                     onDismissRequest = { showLogoutDialog = false },
                     title = { Text("Cerrar sesión") },
                     text = { Text("¿Estás seguro?") },
                     confirmButton = {
                         TextButton(onClick = { showLogoutDialog = false; onLogout() }) {
-                            Text("Sí", color = Color.Red)
+                            Text("Sí", color = colorScheme.error)
                         }
                     },
                     dismissButton = {

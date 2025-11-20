@@ -12,13 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -42,6 +39,7 @@ fun ItineraryScreen(
     var showMap by remember { mutableStateOf(false) }
 
     val db = FirebaseFirestore.getInstance()
+    val colorScheme = MaterialTheme.colorScheme
 
     // CARGAR ITINERARIO
     LaunchedEffect(itineraryId) {
@@ -78,25 +76,25 @@ fun ItineraryScreen(
     }
 
     if (loading) {
-        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = IndigoPrimary) }
+        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = colorScheme.primary) }
         return
     }
 
     if (error != null || itinerary == null) {
         Box(Modifier.fillMaxSize(), Alignment.Center) {
-            Text(error ?: "Itinerario no encontrado", color = MaterialTheme.colorScheme.error)
+            Text(error ?: "Itinerario no encontrado", color = colorScheme.error)
         }
         return
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
+        containerColor = colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(itinerary!!.destino, color = IndigoPrimary) },
+                title = { Text(itinerary!!.destino, color = colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Volver", tint = IndigoPrimary)
+                        Icon(Icons.Default.ArrowBack, "Volver", tint = colorScheme.primary)
                     }
                 },
                 actions = {
@@ -104,20 +102,26 @@ fun ItineraryScreen(
                         Icon(
                             imageVector = if (showMap) Icons.Default.List else Icons.Default.Map,
                             contentDescription = if (showMap) "Ver lista" else "Ver mapa",
-                            tint = IndigoPrimary
+                            tint = colorScheme.primary
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = colorScheme.surface,
+                    navigationIconContentColor = colorScheme.primary,
+                    titleContentColor = colorScheme.onSurface,
+                    actionIconContentColor = colorScheme.primary
+                )
             )
         },
         floatingActionButton = {
             if (!showMap) {
                 FloatingActionButton(
                     onClick = { showActivityDialog = true; editingActivityId = null },
-                    containerColor = AquaAccent
+                    containerColor = colorScheme.secondary,
+                    contentColor = colorScheme.onSecondary
                 ) {
-                    Icon(Icons.Default.Add, "Nueva actividad", tint = Color.White)
+                    Icon(Icons.Default.Add, "Nueva actividad")
                 }
             }
         }
@@ -129,8 +133,8 @@ fun ItineraryScreen(
                 OutlinedButton(
                     onClick = { showMap = false },
                     modifier = Modifier.padding(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
-                    border = BorderStroke(1.dp, IndigoPrimary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                    border = BorderStroke(1.dp, colorScheme.primary)
                 ) {
                     Icon(Icons.Default.ArrowBack, null)
                     Spacer(Modifier.width(8.dp))
@@ -155,18 +159,18 @@ fun ItineraryScreen(
                 ) {
                     Marker(state = MarkerState(end), title = itinerary!!.destino)
                     Marker(state = MarkerState(start), title = "Ciudad de Guatemala")
-                    Polyline(points = route, color = Color.Blue, width = 8f)
+                    Polyline(points = route, color = colorScheme.primary, width = 8f)
                 }
 
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
                 ) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Ruta: Ciudad de Guatemala to ${itinerary!!.destino}", style = MaterialTheme.typography.titleMedium, color = IndigoPrimary)
-                        Text("Distancia: ~45 km | Tiempo: ~1h 15min", color = Color.Gray)
+                        Text("Ruta: Ciudad de Guatemala to ${itinerary!!.destino}", style = MaterialTheme.typography.titleMedium, color = colorScheme.onSurface)
+                        Text("Distancia: ~45 km | Tiempo: ~1h 15min", color = colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -197,35 +201,26 @@ fun ItineraryScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
                     ) {
                         Column(Modifier.padding(20.dp)) {
-                            Text("Destino", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text(itinerary!!.destino, style = MaterialTheme.typography.titleLarge, color = IndigoPrimary)
+                            Text("Destino", style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
+                            Text(itinerary!!.destino, style = MaterialTheme.typography.titleLarge, color = colorScheme.primary)
                             Spacer(Modifier.height(12.dp))
-                            Text("Fechas", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("${itinerary!!.fechaInicio} to ${itinerary!!.fechaFin}", color = Color.Gray)
+                            Text("Fechas", style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
+                            Text("${itinerary!!.fechaInicio} to ${itinerary!!.fechaFin}", color = colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(12.dp))
-                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text("Estado", style = MaterialTheme.typography.labelSmall, color = colorScheme.onSurfaceVariant)
+                            val published = itinerary!!.estado == "Publicado"
                             AssistChip(
                                 onClick = {},
                                 label = { Text(itinerary!!.estado) },
                                 colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = if (itinerary!!.estado == "Publicado") Color(0xFFE8F5E8) else Color(0xFFFFF3E0),
-                                    labelColor = if (itinerary!!.estado == "Publicado") Color(0xFF2E7D32) else Color(0xFFF57C00)
+                                    containerColor = if (published) colorScheme.secondaryContainer else colorScheme.tertiaryContainer,
+                                    labelColor = if (published) colorScheme.onSecondaryContainer else colorScheme.onTertiaryContainer
                                 )
                             )
                         }
-                    }
-                }
-
-                item {
-                    Button(
-                        onClick = { /* Reorganizar con IA */ },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
-                    ) {
-                        Text("Reorganizar con IA", color = Color.White)
                     }
                 }
 
@@ -236,8 +231,8 @@ fun ItineraryScreen(
                                 navController.navigate("edit/$userId/$itineraryId")
                             },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = IndigoPrimary),
-                            border = BorderStroke(1.dp, IndigoPrimary)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                            border = BorderStroke(1.dp, colorScheme.primary)
                         ) {
                             Text("Editar")
                         }
@@ -246,41 +241,41 @@ fun ItineraryScreen(
                             Button(
                                 onClick = { /* Publicar */ },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
+                                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)
                             ) {
-                                Text("Publicar")
+                                Text("Publicar", color = colorScheme.onPrimary)
                             }
                         }
                     }
                 }
 
                 item {
-                    Text("Actividades", style = MaterialTheme.typography.titleMedium, color = IndigoPrimary)
+                    Text("Actividades", style = MaterialTheme.typography.titleMedium, color = colorScheme.onSurface)
                 }
 
                 if (activities.isEmpty()) {
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                            colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
                         ) {
-                            Text("No hay actividades", modifier = Modifier.padding(32.dp), color = Color.Gray)
+                            Text("No hay actividades", modifier = Modifier.padding(32.dp), color = colorScheme.onSurfaceVariant)
                         }
                     }
                 } else {
                     items(activities) { activity ->
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Card(colors = CardDefaults.cardColors(containerColor = colorScheme.surface)) {
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(activity.nombre, style = MaterialTheme.typography.titleMedium, color = IndigoPrimary)
-                                    Text(activity.hora, color = Color.Gray)
-                                    Text(activity.descripcion, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    Text(activity.nombre, style = MaterialTheme.typography.titleMedium, color = colorScheme.onSurface)
+                                    Text(activity.hora, color = colorScheme.onSurfaceVariant)
+                                    Text(activity.descripcion, style = MaterialTheme.typography.bodySmall, color = colorScheme.onSurfaceVariant)
                                 }
                                 IconButton(onClick = { editingActivityId = activity.id; showActivityDialog = true }) {
-                                    Icon(Icons.Default.Edit, null, tint = IndigoPrimary)
+                                    Icon(Icons.Default.Edit, null, tint = colorScheme.primary)
                                 }
                                 IconButton(onClick = { /* Eliminar */ }) {
-                                    Icon(Icons.Default.Delete, null, tint = Color.Red)
+                                    Icon(Icons.Default.Delete, null, tint = colorScheme.error)
                                 }
                             }
                         }
@@ -290,10 +285,10 @@ fun ItineraryScreen(
                 item {
                     Button(
                         onClick = { showDeleteDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                        colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Eliminar Itinerario", color = Color.White)
+                        Text("Eliminar Itinerario", color = colorScheme.onError)
                     }
                 }
             }
@@ -335,7 +330,7 @@ fun ItineraryScreen(
                             }
                         showDeleteDialog = false
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.error)
                 ) { Text("Eliminar") }
             },
             dismissButton = {

@@ -24,7 +24,6 @@ fun NavGraph(startDestination: String = "login") {
 
     var currentUser by remember { mutableStateOf(auth.currentUser) }
 
-    // Escucha cambios de autenticación
     LaunchedEffect(Unit) {
         auth.addAuthStateListener { firebaseAuth ->
             val user = firebaseAuth.currentUser
@@ -75,128 +74,137 @@ fun NavGraph(startDestination: String = "login") {
             )
         }
 
-        // === PANTALLAS PROTEGIDAS ===
-        if (currentUser != null) {
-            val userId = currentUser!!.uid
+        composable(
+            "home/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val requestedUid = backStackEntry.arguments?.getString("userId")
+            val activeUid = currentUser?.uid
 
-            composable(
-                "home/{userId}",
-                arguments = listOf(navArgument("userId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val uid = backStackEntry.arguments?.getString("userId") ?: run {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+            if (requestedUid.isNullOrBlank() || activeUid == null) {
+                LaunchedEffect(activeUid) {
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                }
+                return@composable
+            }
+
+            if (requestedUid != activeUid) {
+                LaunchedEffect(activeUid) {
+                    navController.navigate("home/$activeUid") {
+                        popUpTo("home/{userId}") { inclusive = true }
                     }
-                    return@composable
                 }
-
-                if (uid != userId) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("home/$userId") {
-                            popUpTo("home/{userId}") { inclusive = true }
-                        }
-                    }
-                    return@composable
-                }
-
-                HomeScreen(
-                    userId = uid,
-                    onItineraryClick = { itineraryId ->
-                        navController.navigate("detail/$uid/$itineraryId")
-                    },
-                    onSettingsClick = { navController.navigate("settings") },
-                    onNewItineraryClick = { navController.navigate("create/$uid") }
-                )
+                return@composable
             }
 
-            composable(
-                "create/{userId}",
-                arguments = listOf(navArgument("userId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val uid = backStackEntry.arguments?.getString("userId") ?: run {
-                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
-                    return@composable
-                }
-                if (uid != userId) return@composable
-
-                ItineraryFormScreen(
-                    userId = uid,
-                    onSaveSuccess = { navController.popBackStack() },
-                    onCancel = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                "detail/{userId}/{itineraryId}",
-                arguments = listOf(
-                    navArgument("userId") { type = NavType.StringType },
-                    navArgument("itineraryId") { type = NavType.StringType }
-                )
-            ) { backStackEntry ->
-                val uid = backStackEntry.arguments?.getString("userId") ?: run {
-                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
-                    return@composable
-                }
-                val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: run {
-                    LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
-                }
-                if (uid != userId) return@composable
-
-                ItineraryScreen(
-                    itineraryId = itineraryId,
-                    userId = uid,
-                    navController = navController,
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                "edit/{userId}/{itineraryId}",
-                arguments = listOf(
-                    navArgument("userId") { type = NavType.StringType },
-                    navArgument("itineraryId") { type = NavType.StringType }
-                )
-            ) { backStackEntry ->
-                val uid = backStackEntry.arguments?.getString("userId") ?: run {
-                    LaunchedEffect(Unit) { navController.navigate("login") { popUpTo(0) } }
-                    return@composable
-                }
-                val itineraryId = backStackEntry.arguments?.getString("itineraryId") ?: run {
-                    LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
-                }
-                if (uid != userId) return@composable
-
-                ItineraryFormScreen(
-                    userId = uid,
-                    itineraryId = itineraryId,
-                    onSaveSuccess = { navController.popBackStack() },
-                    onCancel = { navController.popBackStack() }
-                )
-            }
-
-            composable("settings") {
-                SettingsScreen(
-                    onBack = { navController.popBackStack() },
-                    onLogout = { auth.signOut() },
-                    snackbarHostState = snackbarHostState
-                )
-            }
+            HomeScreen(
+                userId = activeUid,
+                onItineraryClick = { itineraryId ->
+                    navController.navigate("detail/$activeUid/$itineraryId")
+                },
+                onSettingsClick = { navController.navigate("settings") },
+                onNewItineraryClick = { navController.navigate("create/$activeUid") }
+            )
         }
 
-        // === REDIRECCIÓN AUTOMÁTICA SI NO HAY USUARIO ===
-        else {
-            composable(
-                route = "{path}",
-                arguments = listOf(navArgument("path") { type = NavType.StringType })
-            ) {
-                LaunchedEffect(Unit) {
-                    navController.navigate("login") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+        composable(
+            "create/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val requestedUid = backStackEntry.arguments?.getString("userId")
+            val activeUid = currentUser?.uid
+
+            if (requestedUid.isNullOrBlank() || activeUid == null) {
+                LaunchedEffect(activeUid) { navController.navigate("login") { popUpTo(0) } }
+                return@composable
             }
+            if (requestedUid != activeUid) {
+                LaunchedEffect(activeUid) {
+                    navController.navigate("home/$activeUid") { popUpTo("home/{userId}") { inclusive = true } }
+                }
+                return@composable
+            }
+
+            ItineraryFormScreen(
+                userId = activeUid,
+                onSaveSuccess = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            "detail/{userId}/{itineraryId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("itineraryId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val requestedUid = backStackEntry.arguments?.getString("userId")
+            val itineraryId = backStackEntry.arguments?.getString("itineraryId")
+            val activeUid = currentUser?.uid
+
+            if (requestedUid.isNullOrBlank() || itineraryId.isNullOrBlank() || activeUid == null) {
+                LaunchedEffect(activeUid) { navController.navigate("login") { popUpTo(0) } }
+                return@composable
+            }
+            if (requestedUid != activeUid) {
+                LaunchedEffect(activeUid) {
+                    navController.navigate("home/$activeUid") { popUpTo("home/{userId}") { inclusive = true } }
+                }
+                return@composable
+            }
+
+            ItineraryScreen(
+                itineraryId = itineraryId,
+                userId = activeUid,
+                navController = navController,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            "edit/{userId}/{itineraryId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("itineraryId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val requestedUid = backStackEntry.arguments?.getString("userId")
+            val itineraryId = backStackEntry.arguments?.getString("itineraryId")
+            val activeUid = currentUser?.uid
+
+            if (requestedUid.isNullOrBlank() || itineraryId.isNullOrBlank() || activeUid == null) {
+                LaunchedEffect(activeUid) { navController.navigate("login") { popUpTo(0) } }
+                return@composable
+            }
+            if (requestedUid != activeUid) {
+                LaunchedEffect(activeUid) {
+                    navController.navigate("home/$activeUid") { popUpTo("home/{userId}") { inclusive = true } }
+                }
+                return@composable
+            }
+
+            ItineraryFormScreen(
+                userId = activeUid,
+                itineraryId = itineraryId,
+                onSaveSuccess = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
+        }
+
+        composable("settings") {
+            if (currentUser == null) {
+                LaunchedEffect(Unit) {
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                }
+                return@composable
+            }
+
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onLogout = { auth.signOut() },
+                snackbarHostState = snackbarHostState
+            )
         }
     }
 }

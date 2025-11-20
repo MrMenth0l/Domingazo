@@ -5,12 +5,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.AquaAccent
-import com.example.proyecto1_plataformasmoviles_domingazo.ui.theme.IndigoPrimary
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -30,12 +27,26 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
     val auth = FirebaseAuth.getInstance()
 
+    val colorScheme = MaterialTheme.colorScheme
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colorScheme.primary,
+        unfocusedBorderColor = colorScheme.outline,
+        focusedLabelColor = colorScheme.primary,
+        unfocusedLabelColor = colorScheme.onSurfaceVariant,
+        cursorColor = colorScheme.secondary,
+        focusedContainerColor = colorScheme.surface,
+        unfocusedContainerColor = colorScheme.surface
+    )
+
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
+        containerColor = colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Iniciar Sesión", color = IndigoPrimary) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                title = { Text("Iniciar Sesión", color = colorScheme.onSurface) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = colorScheme.surface,
+                    titleContentColor = colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -52,10 +63,7 @@ fun LoginScreen(
                 onValueChange = { email = it },
                 label = { Text("Correo") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                )
+                colors = textFieldColors
             )
 
             Spacer(Modifier.height(16.dp))
@@ -66,10 +74,7 @@ fun LoginScreen(
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = IndigoPrimary,
-                    cursorColor = AquaAccent
-                )
+                colors = textFieldColors
             )
 
             Spacer(Modifier.height(24.dp))
@@ -104,19 +109,19 @@ fun LoginScreen(
                 },
                 enabled = !loading,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = AquaAccent)
+                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)
             ) {
                 if (loading) {
-                    CircularProgressIndicator(Modifier.size(16.dp), color = Color.White)
+                    CircularProgressIndicator(Modifier.size(16.dp), color = colorScheme.onPrimary)
                 } else {
-                    Text("Iniciar Sesión", color = Color.White)
+                    Text("Iniciar Sesión", color = colorScheme.onPrimary)
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
             TextButton(onClick = onRegisterClick) {
-                Text("¿No tienes cuenta? Regístrate", color = IndigoPrimary)
+                Text("¿No tienes cuenta? Regístrate", color = colorScheme.primary)
             }
         }
     }
